@@ -1,11 +1,18 @@
 from flask import Flask, request, send_from_directory, jsonify, make_response
 import secrets
 import time
+import os  # 引入 os 模組
 
 app = Flask(__name__)
 
-STATIC_FOLDER = 'C:/Users/User/Desktop/H5測試'
+STATIC_FOLDER = os.path.join(os.getcwd())  # 設置靜態文件目錄
 tokens = {}  # 存儲有效的 Token 和生成時間
+
+
+# 根路徑服務主頁
+@app.route('/')
+def home():
+    return send_from_directory(STATIC_FOLDER, 'index.html')  # 返回 index.html
 
 
 # 靜態文件服務
@@ -17,7 +24,6 @@ def serve_file(filename):
 # 金鑰驗證並生成一次性 Token
 @app.route('/get-token', methods=['GET', 'POST'])
 def generate_token():
-    # 調試輸出請求信息
     print("Request Method:", request.method)
     print("Request Headers:", request.headers)
     print("Request Form Data:", request.form)
@@ -27,7 +33,6 @@ def generate_token():
 
     auth_key = request.form.get('authKey', '').strip()
     if auth_key == "gasyuberu":  # 檢查金鑰
-        # 清理過期 Token
         current_time = time.time()
         global tokens
         tokens = {t: ts for t, ts in tokens.items() if current_time -
@@ -52,12 +57,10 @@ def validate_token():
 
     print("Token received for validation:", token)
 
-    # 驗證 Token 是否有效且未過期
     if creation_time and current_time - creation_time < 300:  # 5 分鐘有效期
         print("Token is valid.")
         return jsonify({"message": "Token Valid"}), 200
     else:
-        # 如果 Token 過期或無效，刪除它
         tokens.pop(token, None)
         print("Token is invalid or expired.")
         return jsonify({"message": "Invalid or Expired Token"}), 403
