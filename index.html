@@ -123,17 +123,21 @@ document.addEventListener("DOMContentLoaded", function () {
 		const ref = db.ref(`/authorizedUsers/${uid}/sessionId`);
 
 		let currentSessionId = null;
-
-		ref.once("value").then((snapshot) => {
-			currentSessionId = snapshot.val();
-			console.log("🎯 當前 SessionId：", currentSessionId);
-		});
+		let initialized = false;
 
 		ref.on("value", (snapshot) => {
 			const latest = snapshot.val();
-			if (currentSessionId && latest !== currentSessionId) {
-				console.warn("🛑 Session 被其他裝置覆蓋，自動踢出");
-				blockAccess("此帳號已於其他裝置開啟，本視窗已失效");
+
+			if (!initialized) {
+				currentSessionId = latest;
+				console.log("✅ 初始化 currentSessionId =", currentSessionId);
+				initialized = true;
+				return;
+			}
+
+			if (latest !== currentSessionId) {
+				console.warn("🛑 sessionId 改變，觸發踢出");
+				blockAccess("此帳號已在其他裝置開啟，本視窗已失效");
 			}
 		});
 	}
