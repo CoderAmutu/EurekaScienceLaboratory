@@ -91,18 +91,18 @@ document.addEventListener("DOMContentLoaded", function () {
 			return res.json();
 		})
 		.then(() => {
-			console.log("✅ Token 驗證成功，準備初始化 Firebase 與 session 監聽...");
+			console.log("Token 驗證成功，準備初始化 Firebase 與 session 監聽...");
 			startSessionMonitor(uid);
 		})
 		.catch((err) => {
-			console.error("❌ Token 錯誤或過期", err);
+			console.error("Token 錯誤或過期", err);
 			blockAccess("授權失敗，請從官方應用程式開啟");
 		});
 
 	function blockAccess(message) {
 		document.body.innerHTML = `
 			<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:black;color:white;font-size:1.8em;text-align:center;padding:2em;">
-				⚠️ ${message}<br><br>請從 Unity 應用程式啟動本頁
+				 ${message}<br><br>請從 Unity 應用程式啟動本頁
 			</div>`;
 	}
 
@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
 			console.log("🔍 即時監聽比對 sessionId：current =", currentStr, "| latest =", latestStr);
 
 				if (latestStr !== currentStr) {
-					console.warn("🛑 sessionId 改變（on 觸發），觸發踢出");
+					console.warn("sessionId 改變（on 觸發），觸發踢出");
 					blockAccess("此帳號已於其他裝置開啟，本視窗已失效");
 				}
 		});
@@ -154,8 +154,10 @@ document.addEventListener("DOMContentLoaded", function () {
 				const latestStr = (latest ?? "").toString();
 				const currentStr = (currentSessionId ?? "").toString();
 
+				console.log("比對 sessionId：current =", currentStr, "| latest =", latestStr);
+
 				if (latestStr !== currentStr) {
-					console.warn("🛑 sessionId 改變（輪詢發現），觸發踢出");
+					console.warn("sessionId 改變（輪詢發現），觸發踢出");
 					blockAccess("此帳號已於其他裝置開啟，本視窗已失效");
 				}
 			});
