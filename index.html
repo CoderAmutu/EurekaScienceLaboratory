@@ -180,6 +180,18 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script>
+      // 初始化 Firebase
+      const firebaseConfig = {
+        apiKey: "AIzaSyD1izD51xRUcs5kVHffqB9-r5QPiSPB4cA",
+        authDomain: "eurekasciencelaboratory.firebaseapp.com",
+        databaseURL:
+          "https://eurekasciencelaboratory-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "eurekasciencelaboratory",
+        storageBucket: "eurekasciencelaboratory.appspot.com",
+        messagingSenderId: "881933165589",
+        appId: "1:881933165589:web:f7dcda293489a9bb2cda1c",
+      };
+      firebase.initializeApp(firebaseConfig);
       document.addEventListener("DOMContentLoaded", function () {
         const urlParams = new URLSearchParams(window.location.search);
         const uid = urlParams.get("uid");
@@ -222,19 +234,6 @@
 
         function startSessionMonitor(uid) {
           console.log("執行 startSessionMonitor(uid)，收到 uid =", uid);
-          // 初始化 Firebase
-          const firebaseConfig = {
-            apiKey: "AIzaSyD1izD51xRUcs5kVHffqB9-r5QPiSPB4cA",
-            authDomain: "eurekasciencelaboratory.firebaseapp.com",
-            databaseURL:
-              "https://eurekasciencelaboratory-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "eurekasciencelaboratory",
-            storageBucket: "eurekasciencelaboratory.appspot.com",
-            messagingSenderId: "881933165589",
-            appId: "1:881933165589:web:f7dcda293489a9bb2cda1c",
-          };
-
-          firebase.initializeApp(firebaseConfig);
           const db = firebase.database();
           const ref = db.ref(`/authorizedUsers/${uid}/sessionId`);
 
