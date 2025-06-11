@@ -3,8 +3,6 @@
 <html style=background-color:#30566b;>
 <head>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/><meta name="format-detection" content="telephone=no"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-status-bar-style" content="black"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><meta name="msapplication-tap-highlight" content="no"/><title>PLANT010423</title><link rel="apple-touch-icon-precomposed" href="data/apple-touch-icon.png"/><link rel="shortcut icon" type="image/ico" href="data/favicon.ico"/><style>body {background-color:#30566b;}#spr0_8a1a4a6c {display:none;}</style>
-    
-    
     <style>
 		#playerView {
 			position:relative;
@@ -42,7 +40,6 @@
 			animation: preloader_spin 1s infinite linear;
 			-webkit-animation: preloader_spin 1s infinite linear;
 		}
-
 		@keyframes preloader_spin { 0% {transform: rotate(0deg);} 100% {transform: rotate(360deg);} }
 		@-webkit-keyframes preloader_spin { 0% {-webkit-transform: rotate(0deg);} 100% {-webkit-transform: rotate(360deg);}}
     </style>
@@ -74,56 +71,75 @@
 				start();
 		})();
     </script>
-	<script>
-		document.addEventListener("DOMContentLoaded", function () {
-			const urlParams = new URLSearchParams(window.location.search);
-			const token = urlParams.get("token");
-		
-			// 驗證 Token
-			fetch(`/validate-token?token=${token}`, { method: "GET" })
-				.then((response) => {
-					if (!response.ok) {
-						throw new Error("Token 驗證失敗");
-					}
-					return response.json();
-				})
-				.then((data) => {
-					if (data.message === "Token Valid") {
-						console.log("驗證成功，初始化頁面內容！");
-						// 初始化頁面內容
-					} else {
-						unauthorizedAccess();
-					}
-				})
-				.catch((error) => {
-					console.error("錯誤:", error.message);
-					unauthorizedAccess();
-				});
+	<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+	const urlParams = new URLSearchParams(window.location.search);
+	const uid = urlParams.get("uid");
+	const token = urlParams.get("token");
+
+	if (!uid || !token) {
+		return blockAccess("缺少必要參數 uid 或 token");
+	}
+
+	// 第一步：驗證一次性 Token
+	fetch(`/validate-token?uid=${uid}&token=${token}`)
+		.then((res) => {
+			if (!res.ok) throw new Error("Token 驗證失敗");
+			return res.json();
+		})
+		.then(() => {
+			console.log("✅ Token 驗證成功，準備初始化 Firebase 與 session 監聽...");
+			startSessionMonitor(uid);
+		})
+		.catch((err) => {
+			console.error("❌ Token 錯誤或過期", err);
+			blockAccess("授權失敗，請從官方應用程式開啟");
 		});
-		
-		
-		function unauthorizedAccess() {
-				document.title = "尤里卡實驗室檢測系統警告！";
-		  document.body.innerHTML = `
-			<div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-				background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.5); 
-				font-family: Arial, sans-serif; text-align: center;">
-			  <h2 style="color: #FF0000; margin-bottom: 15px;">⚠️ 尤里卡實驗室入侵警告⚠️</h2>
-			  <p>🌐系統偵測到您可能意外的進入了實驗室的神秘領域🌐</p>
-			  <p>從神秘領域出現可能會讓勤奮研究的夥伴們感到不安😨</p>
-			  <p>📥 請立即回到正確的尤里卡實驗室入口</p>
-			  <p>讓我們繼續共同探索科學的奧秘吧！</p>
-			  <button onclick="closeWindow()" style="margin-top: 15px; padding: 10px 20px; border: none; 
-				  background-color: #007BFF; color: #fff; border-radius: 5px; cursor: pointer;">離開系統</button>
-			</div>
-		  `;
-		  
-		  window.closeWindow = function () {
-			window.close();
-			document.body.innerHTML = "";
-		  };
+
+	function blockAccess(message) {
+		document.body.innerHTML = `
+			<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:black;color:white;font-size:1.8em;text-align:center;padding:2em;">
+				⚠️ ${message}<br><br>請從 Unity 應用程式啟動本頁
+			</div>`;
+	}
+
+	function startSessionMonitor(uid) {
+		// 初始化 Firebase
+		const firebaseConfig = {
+			apiKey: "AIzaSyD1izD51xRUcs5kVHffqB9-r5QPiSPB4cA",
+			authDomain: "eurekasciencelaboratory.firebaseapp.com",
+			databaseURL: "https://eurekasciencelaboratory-default-rtdb.asia-southeast1.firebasedatabase.app",
+			projectId: "eurekasciencelaboratory",
+			storageBucket: "eurekasciencelaboratory.appspot.com",
+			messagingSenderId: "881933165589",
+			appId: "1:881933165589:web:f7dcda293489a9bb2cda1c"
+		};
+
+		firebase.initializeApp(firebaseConfig);
+		const db = firebase.database();
+		const ref = db.ref(`/authorizedUsers/${uid}/sessionId`);
+
+		let currentSessionId = null;
+
+		ref.once("value").then((snapshot) => {
+			currentSessionId = snapshot.val();
+			console.log("🎯 當前 SessionId：", currentSessionId);
+		});
+
+		ref.on("value", (snapshot) => {
+			const latest = snapshot.val();
+			if (currentSessionId && latest !== currentSessionId) {
+				console.warn("🛑 Session 被其他裝置覆蓋，自動踢出");
+				blockAccess("此帳號已於其他裝置開啟，本視窗已失效");
 			}
-		
-		</script>
+		});
+	}
+});
+</script>
+</body>
+
 </body>
 </html>

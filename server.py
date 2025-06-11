@@ -1,71 +1,85 @@
-from flask import Flask, request, send_from_directory, jsonify, make_response
+from flask import Flask, request, send_from_directory, jsonify
 import secrets
 import time
-import os  # 引入 os 模組
+import os
 
 app = Flask(__name__)
 
-STATIC_FOLDER = os.path.join(os.getcwd())  # 設置靜態文件目錄
-tokens = {}  # 存儲有效的 Token 和生成時間
+# 靜態檔案所在資料夾
+STATIC_FOLDER = os.path.join(os.getcwd())
+
+# tokens dict 會存 token → (生成時間, 綁定的 uid)
+tokens = {}
+
+# 根路徑服務首頁
 
 
-# 根路徑服務主頁
 @app.route('/')
 def home():
-    return send_from_directory(STATIC_FOLDER, 'index.html')  # 返回 index.html
+    return send_from_directory(STATIC_FOLDER, 'index.html')
+
+# 靜態資源服務（如 index.html 以外的檔案）
 
 
-# 靜態文件服務
 @app.route('/<path:filename>', methods=['GET'])
 def serve_file(filename):
     return send_from_directory(STATIC_FOLDER, filename)
 
+# Unity 端呼叫，用來產生一次性 Token
 
-# 金鑰驗證並生成一次性 Token
-@app.route('/get-token', methods=['GET', 'POST'])
+
+@app.route('/get-token', methods=['POST'])
 def generate_token():
-    print("Request Method:", request.method)
-    print("Request Headers:", request.headers)
-    print("Request Form Data:", request.form)
-
-    if request.method == 'GET':
-        return jsonify({"message": "Use POST method with authKey"}), 405
-
     auth_key = request.form.get('authKey', '').strip()
-    if auth_key == "gasyuberu":  # 檢查金鑰
+    uid = request.form.get('uid', '').strip()  # 拿到 Unity 傳來的 UID
+
+    # 驗證金鑰與 UID
+    if auth_key == "gasyuberu" and uid:
         current_time = time.time()
         global tokens
-        tokens = {t: ts for t, ts in tokens.items() if current_time -
-                  ts < 300}  # 保留有效期內的 Token
+        # 清理超過 5 分鐘的舊 token
+        tokens = {
+            t: (ts, u)
+            for t, (ts, u) in tokens.items()
+            if current_time - ts < 300
+        }
 
-        # 生成新 Token
+        # 產生新的 token，並綁定到 UID
         token = secrets.token_urlsafe(16).strip()
-        tokens[token] = current_time  # 存儲生成時間
-        print("Generated Token:", token)
+        tokens[token] = (current_time, uid)
+        print(f"Generated Token for UID {uid}: {token}")
         return jsonify({"token": token}), 200
     else:
-        print("Invalid authKey received.")
-        return jsonify({"message": "Invalid Key"}), 403
+        print("Invalid authKey or missing UID:", auth_key, uid)
+        return jsonify({"message": "Invalid Key or missing UID"}), 403
+
+# H5 端載入後呼叫，用來驗證一次性 Token 並立刻作廢
 
 
-# 驗證 Token 是否有效
 @app.route('/validate-token', methods=['GET'])
 def validate_token():
     token = request.args.get('token', '').strip()
+    uid = request.args.get('uid', '').strip()
     current_time = time.time()
-    creation_time = tokens.get(token)
 
-    print("Token received for validation:", token)
+    entry = tokens.get(token)
+    print("Token validation request:", token, "for UID:", uid)
 
-    if creation_time and current_time - creation_time < 300:  # 5 分鐘有效期
-        print("Token is valid.")
-        return jsonify({"message": "Token Valid"}), 200
-    else:
-        tokens.pop(token, None)
-        print("Token is invalid or expired.")
-        return jsonify({"message": "Invalid or Expired Token"}), 403
+    if entry:
+        creation_time, associated_uid = entry
+        # 驗證：1) 5 分鐘內；2) UID 必須一致
+        if current_time - creation_time < 300 and associated_uid == uid:
+            # 成功即刪除，使其一次性失效
+            tokens.pop(token, None)
+            print(f"Token valid and deleted for UID {uid}: {token}")
+            return jsonify({"message": "Token Valid"}), 200
+
+    # 驗證失敗或過期，都刪除 token 防止重複使用
+    tokens.pop(token, None)
+    print("Token invalid, expired, or UID mismatch:", token, uid)
+    return jsonify({"message": "Invalid or Expired Token"}), 403
 
 
-# 啟動伺服器
 if __name__ == '__main__':
+    # 啟動 Flask 伺服器
     app.run(host='0.0.0.0', port=8080)
