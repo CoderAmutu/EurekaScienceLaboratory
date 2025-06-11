@@ -138,13 +138,28 @@ document.addEventListener("DOMContentLoaded", function () {
 				return;
 			}
 
-			console.log("🔍 比對 sessionId：current =", currentStr, "| latest =", latestStr);
+			console.log("🔍 即時監聽比對 sessionId：current =", currentStr, "| latest =", latestStr);
 
-			if (latestStr !== currentStr) {
-				console.warn("🛑 sessionId 改變，觸發踢出");
-				blockAccess("此帳號已在其他裝置開啟，本視窗已失效");
-			}
+				if (latestStr !== currentStr) {
+					console.warn("🛑 sessionId 改變（on 觸發），觸發踢出");
+					blockAccess("此帳號已於其他裝置開啟，本視窗已失效");
+				}
 		});
+		// ✅ fallback 輪詢機制（每 5 秒主動取一次）
+		setInterval(() => {
+			if (!initialized) return;
+
+			ref.once("value").then((snapshot) => {
+				const latest = snapshot.val();
+				const latestStr = (latest ?? "").toString();
+				const currentStr = (currentSessionId ?? "").toString();
+
+				if (latestStr !== currentStr) {
+					console.warn("🛑 sessionId 改變（輪詢發現），觸發踢出");
+					blockAccess("此帳號已於其他裝置開啟，本視窗已失效");
+				}
+			});
+		}, 5000); // 每 5 秒一次
 	}
 });
 </script>
