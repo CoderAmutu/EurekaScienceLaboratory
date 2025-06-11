@@ -2,7 +2,7 @@
 <!-- Created with iSpring --><!-- 1304 824 --><!--version 9.1.0.25298 --><!--type html --><!--mainFolder ./ -->
 <html style=background-color:#30566b;>
 <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/><meta name="format-detection" content="telephone=no"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-status-bar-style" content="black"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><meta name="msapplication-tap-highlight" content="no"/><title>PLANT010423</title><link rel="apple-touch-icon-precomposed" href="data/apple-touch-icon.png"/><link rel="shortcut icon" type="image/ico" href="data/favicon.ico"/><style>body {background-color:#30566b;}#spr0_8a1a4a6c {display:none;}</style>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/><meta name="format-detection" content="telephone=no"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-status-bar-style" content="black"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><meta name="msapplication-tap-highlight" content="no"/><title>科普樂</title><link rel="apple-touch-icon-precomposed" href="data/apple-touch-icon.png"/><link rel="shortcut icon" type="image/ico" href="data/favicon.ico"/><style>body {background-color:#30566b;}#spr0_8a1a4a6c {display:none;}</style>
     <style>
 		#playerView {
 			position:relative;
@@ -127,15 +127,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
 		ref.on("value", (snapshot) => {
 			const latest = snapshot.val();
+			const latestStr = (latest ?? "").toString(); // 防 null、轉字串
+			const currentStr = (currentSessionId ?? "").toString();
 
 			if (!initialized) {
-				currentSessionId = latest;
-				console.log("✅ 初始化 currentSessionId =", currentSessionId);
+				currentSessionId = latestStr;
+				console.log("✅ 初始化 sessionId =", currentSessionId);
 				initialized = true;
 				return;
 			}
 
-			if (latest !== currentSessionId) {
+			console.log("🔍 比對 sessionId：current =", currentStr, "| latest =", latestStr);
+
+			if (latestStr !== currentStr) {
 				console.warn("🛑 sessionId 改變，觸發踢出");
 				blockAccess("此帳號已在其他裝置開啟，本視窗已失效");
 			}
