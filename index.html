@@ -197,12 +197,18 @@
         const uid = urlParams.get("uid");
         const token = urlParams.get("token");
 
+        console.log("🔍 window.location.search =", window.location.search);
+        console.log("🔍 parsed uid           =", uid);
+        console.log("🔍 parsed token         =", token);
+        const validateUrl = `/validate-token?uid=${uid}&token=${token}`;
+        console.log("🔍 calling validate-url =", validateUrl);
+
         if (!uid || !token) {
           return blockAccess("缺少必要參數 uid 或 token");
         }
 
         // 第一步：驗證一次性 Token
-        fetch(`/validate-token?uid=${uid}&token=${token}`)
+        fetch(validateUrl, { method: "GET" })
           .then((res) => {
             if (!res.ok) throw new Error("Token 驗證失敗");
             return res.json();
