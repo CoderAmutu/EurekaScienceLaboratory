@@ -196,9 +196,16 @@
             return res.json();
           })
           .then(() => {
-            console.log(
-              "Token 驗證成功，準備初始化 Firebase 與 session 監聽..."
-            );
+            console.log("✅ Token 驗證成功，準備登入 Firebase...");
+            const fbToken = urlParams.get("fb");
+            if (!fbToken) {
+              throw new Error("缺少 Firebase Custom Token");
+            }
+            // ✅ 先登入 Firebase Auth
+            return firebase.auth().signInWithCustomToken(fbToken);
+          })
+          .them(() => {
+            console.log("✅ Firebase 登入成功，啟動 session 監聽");
             startSessionMonitor(uid);
           })
           .catch((err) => {

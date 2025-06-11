@@ -1,7 +1,15 @@
+import firebase_admin
+from firebase_admin import credentials, auth
 from flask import Flask, request, send_from_directory, jsonify
 import secrets
 import time
 import os
+import json
+
+# 將環境變數內容寫出成 firebase-key.json（只在 Render 上用）
+if os.environ.get("FIREBASE_ADMIN_JSON"):
+    with open("firebase-key.json", "w") as f:
+        json.dump(json.loads(os.environ["FIREBASE_ADMIN_JSON"]), f)
 
 app = Flask(__name__)
 
@@ -30,6 +38,7 @@ def serve_file(filename):
 
 @app.route('/get-token', methods=['POST'])
 def generate_token():
+
     auth_key = request.form.get('authKey', '').strip()
     uid = request.form.get('uid', '').strip()  # 拿到 Unity 傳來的 UID
 
@@ -53,9 +62,32 @@ def generate_token():
         print("Invalid authKey or missing UID:", auth_key, uid)
         return jsonify({"message": "Invalid Key or missing UID"}), 403
 
+
+# 初始化 Firebase Admin SDK（只做一次）
+if not firebase_admin._apps:
+    cred = credentials.Certificate("firebase-key.json")
+    firebase_admin.initialize_app(cred)
+    print("✅ Firebase Admin 初始化成功")
+
+
+@app.route('/get-firebase-custom-token', methods=['POST'])
+def get_firebase_custom_token():
+    auth_key = request.form.get('authKey', '').strip()
+    uid = request.form.get('uid', '').strip()
+
+    if auth_key != "gasyuberu" or not uid:
+        print("Custom Token 請求失敗：authKey 或 UID 錯誤")
+        return jsonify({"message": "Unauthorized"}), 403
+
+    try:
+        custom_token = auth.create_custom_token(uid)
+        return jsonify({"customToken": custom_token.decode("utf-8")}), 200
+    except Exception as e:
+        print("❌ Firebase Custom Token 錯誤:", e)
+        return jsonify({"message": "Firebase error"}), 500
+
+
 # H5 端載入後呼叫，用來驗證一次性 Token 並立刻作廢
-
-
 @app.route('/validate-token', methods=['GET'])
 def validate_token():
     token = request.args.get('token', '').strip()
