@@ -80,6 +80,6 @@ def validate_token():
     return jsonify({"message": "Invalid or Expired Token"}), 403
 
 
-if __name__ == '__main__':
-    # 啟動 Flask 伺服器
-    app.run(host='0.0.0.0', port=8080)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
