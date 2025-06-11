@@ -204,7 +204,7 @@
             // ✅ 先登入 Firebase Auth
             return firebase.auth().signInWithCustomToken(fbToken);
           })
-          .them(() => {
+          .then(() => {
             console.log("✅ Firebase 登入成功，啟動 session 監聽");
             startSessionMonitor(uid);
           })
