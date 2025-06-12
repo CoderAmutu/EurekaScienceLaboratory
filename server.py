@@ -48,9 +48,15 @@ def home():
     return Response(filled, mimetype='text/html')
 
 
+@app.route('/index.html')
+def index_html():
+    # 確保 /index.html 也能動態注入
+    return home()
+
+
 @app.route('/<path:filename>')
 def static_files(filename):
-    # 提供其他靜態資源
+    # 其他靜態檔案
     return send_from_directory(STATIC_FOLDER, filename)
 
 
