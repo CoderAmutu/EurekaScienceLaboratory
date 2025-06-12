@@ -48,6 +48,18 @@ def home():
     return Response(filled, mimetype='text/html')
 
 
+@app.route('/auth.js')
+def serve_auth_js():
+    path = os.path.join(STATIC_FOLDER, 'auth.js')
+    code = open(path, encoding='utf-8').read()
+    filled = code.replace(
+        "__FIREBASE_API_KEY__",
+        os.getenv("FIREBASE_API_KEY", "")
+    )
+    # 返回 JS
+    return Response(filled, mimetype='application/javascript')
+
+
 @app.route('/index.html')
 def index_html():
     # 確保 /index.html 也能動態注入
@@ -56,7 +68,10 @@ def index_html():
 
 @app.route('/<path:filename>')
 def static_files(filename):
-    # 其他靜態檔案
+    if filename == 'index.html':
+        return home()
+    if filename == 'auth.js':
+        return serve_auth_js()
     return send_from_directory(STATIC_FOLDER, filename)
 
 
