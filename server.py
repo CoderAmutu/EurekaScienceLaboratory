@@ -68,8 +68,14 @@ def index_html():
 
 @app.route('/<path:filename>')
 def static_files(filename):
-    if filename == 'index.html':
-        return home()
+    # 只要是任何路徑下的 index.html 都動態注入
+    if filename.endswith('index.html'):
+        path = os.path.join(STATIC_FOLDER, filename)
+        tpl = open(path, encoding='utf-8').read()
+        filled = tpl.replace("__FIREBASE_API_KEY__",
+                             os.getenv("FIREBASE_API_KEY", ""))
+        return Response(filled, mimetype='text/html')
+    # 其餘保持原本
     if filename == 'auth.js':
         return serve_auth_js()
     return send_from_directory(STATIC_FOLDER, filename)
